@@ -1,7 +1,7 @@
 {
-  "name": "koa-redis",
-  "description": "koa session with redis",
-  "repository": "dead-horse/koa-redis",
+  "name": "koa-redis-multisession",
+  "description": "koa session with redis and multi session support",
+  "repository": "filso/koa-redis-multisession",
   "version": "1.0.1",
   "keywords": ["koa", "middleware", "session", "redis"],
   "files": "index.js",

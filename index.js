@@ -18,6 +18,8 @@ var debug = require('debug')('koa-redis');
 var Redis = require('redis');
 var util = require('util');
 
+var co = require('co');
+
 /**
  * Initialize redis session middleware with `opts`:
  *
@@ -89,6 +91,11 @@ RedisStore.prototype.set = function *(sid, sess, ttl) {
   if (typeof ttl === 'number') {
     ttl = Math.ceil(ttl / 1000);
   }
+
+  if (sess.passport && sess.passport.user) {
+    this.client.sadd(this._getUidKey(sess.passport.user), sid);
+  }
+
   sess = JSON.stringify(sess);
   if (ttl) {
     debug('SETEX %s %s %s', sid, ttl, sess);
@@ -104,4 +111,43 @@ RedisStore.prototype.destroy = function *(sid, sess) {
   debug('DEL %s', sid);
   yield this.client.del(sid);
   debug('DEL %s complete', sid);
+};
+
+
+RedisStore.prototype._getUidKey = function(uid) {
+  return this.prefix + 'user_sessions:' + uid;
+};
+
+RedisStore.prototype._dropPrefix = function(sid) {
+  return sid.replace(this.prefix, '');
+};
+
+RedisStore.prototype.allUserSessions = function* (uid) {
+  var _this = this;
+  var sessions = yield this.client.smembers(this._getUidKey(uid));
+
+  var mc = sessions.map(function(sid) {
+    return ['get', sid];
+  });
+
+  var resp = yield _this.client.multi(mc).exec();
+  /**
+   * If we retrieve null from Redis, it means this session was destroyed.
+   * In that case remove it from the set to speed up future queries.
+   */
+  var parsed = [];
+  for (var i in resp) {
+    var data = resp[i];
+    var added = JSON.parse(data);
+    // if added is null, we deleted this session, if added.passport is 0, then we're logged out
+    if (added === null || added.passport.user === undefined) {
+      var deleteSid = sessions[i];
+      _this.client.srem(_this._getUidKey(uid), deleteSid);
+    } else {
+      added.sid = _this._dropPrefix(sessions[i]);
+      parsed.push(added);
+    }
+  }
+  return parsed;
+
 };

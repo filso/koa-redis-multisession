@@ -7,14 +7,14 @@
   "files": "index.js",
   "author": "dead_horse <dead_horse@qq.com>",
   "dependencies": {
-    "co-redis": "~1.1.0",
+    "co-redis": "~1.2.1",
     "debug": "*",
     "redis": "~0.12.1"
   },
   "devDependencies": {
     "autod": "~0.2.0",
     "blanket": "*",
-    "co": "~3.0.6",
+    "co": "~4.0.0",
     "contributors": "*",
     "coveralls": "*",
     "koa": "~0.13.0",
